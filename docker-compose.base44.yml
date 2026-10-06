@@ -1,27 +1,19 @@
 services:
-  # One-shot: builds the downloadable ZIP packages into the served web root.
-  # Binaries are gitignored, so they are regenerated on every `up` instead of committed.
-  pack:
-    image: python:3.12-alpine
-    restart: "no"
-    working_dir: /work
-    volumes:
-      - ./:/work
-    command: ["python3", "tools/build-zips.py"]
-
   web:
-    image: nginx:alpine
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
     restart: on-failure
-    depends_on:
-      pack:
-        condition: service_completed_successfully
     ports:
       - "3000:80"
     volumes:
-      - ./:/usr/share/nginx/html:ro
+      # repo mounted read-write so the startup step can write the generated ZIPs into the web root
+      - ./:/usr/share/nginx/html
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ./nginx.main.conf:/etc/nginx/nginx.conf:ro
     user: root
+    # build the downloadable ZIP packages, then serve
+    command: ["sh", "-ec", "python3 /usr/share/nginx/html/tools/build-zips.py && exec nginx -g 'daemon off;'"]
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:80/"]
       interval: 10s

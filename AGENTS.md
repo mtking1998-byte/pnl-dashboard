@@ -34,8 +34,9 @@ Serves on port 3000. Health check: `curl http://localhost:3000/`
 The `*.zip` packages are **not committed** (see `.gitignore`) — the platform reverts binary
 artifacts, which silently 404s the download links. Instead they are generated at runtime:
 - `tools/build-zips.py` builds both packages from the repo sources.
-- The one-shot `pack` compose service runs it on every `up`, before `web` starts
-  (`depends_on: pack: condition: service_completed_successfully`).
+- The `web` container builds them on startup: its `command` runs the script, then execs nginx.
+  `docker/web.Dockerfile` is `nginx:alpine` + `python3` for this, and the repo is bind-mounted
+  read-write so the ZIPs land in the served web root.
 - To rebuild manually: `python3 tools/build-zips.py`.
 - `nginx.conf` serves `*.zip` with `Content-Disposition: attachment` so browsers download
   instead of rendering.
