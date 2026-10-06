@@ -1,7 +1,20 @@
 services:
+  # One-shot: builds the downloadable ZIP packages into the served web root.
+  # Binaries are gitignored, so they are regenerated on every `up` instead of committed.
+  pack:
+    image: python:3.12-alpine
+    restart: "no"
+    working_dir: /work
+    volumes:
+      - ./:/work
+    command: ["python3", "tools/build-zips.py"]
+
   web:
     image: nginx:alpine
     restart: on-failure
+    depends_on:
+      pack:
+        condition: service_completed_successfully
     ports:
       - "3000:80"
     volumes:

@@ -1,0 +1,2 @@
+# Generated download packages (built at runtime by the `pack` service / tools/build-zips.py)
+*.zip
